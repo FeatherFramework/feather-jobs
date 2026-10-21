@@ -2,7 +2,7 @@ Config = {
     Contract = 1,
     RequiredCoreContract = 1,
     ReadinessTimeoutMs = 30000,
-    DevMode = false,
+    DevMode = true,
     Outbox = { pollIntervalMs = 1000, retryDelaySeconds = 5, batchSize = 20 },
 
     -- J0 decisions (see README): multiple simultaneous assignments, optional

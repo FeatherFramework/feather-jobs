@@ -1,5 +1,14 @@
 # Feather Jobs
 
+Development checkout update (2026-10-20): local Config.DevMode is true for the
+owner's dev servers. Native organization fixtures are supplied by the sibling
+feather-jobs-tests resource. Run NativeDomainFixtureTest <stableRun> [characterUUID|serverID]
+from the console: 13/13 with a character, 10/10 without. It prints the exact
+read-only JobsNativeIntegrationSmokeTest commands (7/7 each). Retain the same run
+ID and character for replay after restart. Production-default guidance and prior
+Society acceptance below describe their separate release/historical configurations.
+No production-default toggle is required during this development increment.
+
 Authoritative job domain for the Feather Framework: job definitions, grades,
 character assignments, the optional active assignment, and per-assignment duty
 state. Independent of societies, ranks, wages, payroll, uniforms, locations,
@@ -67,6 +76,19 @@ Acceptance of 0.2.0 on 2026-10-17, nobody connected (character UUIDs):
   `DoorlocksJobCheck` reported the job held and the door closed; after
   `SocietyDevDuty <character> on 3` the door opened; after `off 3` it was
   closed again.
+
+## Native organization wiring check
+
+`JobsNativeIntegrationSmokeTest <organizationUUID> <active|inactive|missing>`
+is console-only and read-only, available with either DevMode setting. Use an
+existing organization UUID with its expected eligibility, or a known absent UUID
+with `missing`. Expect 7/7: readiness, enabled policy, native definition/assignment
+policy grants, foreign-principal denial and real organization employer validation.
+It does not create assignments or alter organizations/providers. Organizations
+must trust Jobs as a reader; Admin must load the exact native Jobs service grants.
+Restart those resources after their config changes, then restart Jobs. No manifest
+change or refresh is required for this increment. Historical Society acceptance
+above does not establish this native integration's live acceptance.
 
 ## Dependencies
 

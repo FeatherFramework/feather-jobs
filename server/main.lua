@@ -53,6 +53,47 @@ AddEventHandler('onResourceStop', function(resource)
 end)
 
 -- Read-only release gate; safe on production.
+-- Read-only native wiring check. Does not change providers, employer state or assignments.
+RegisterCommand('JobsNativeIntegrationSmokeTest', function(source, args)
+    if source ~= 0 then return end
+    local expected = { active = 'allowed', inactive = 'employer_inactive', missing = 'employer_not_found' }
+    if not Jobs.Uuid(args[1]) or not expected[args[2]] then
+        print('[JobsNativeIntegrationSmokeTest] usage: JobsNativeIntegrationSmokeTest <organizationUUID> <active|inactive|missing>')
+        return
+    end
+    CreateThread(function()
+        local called, reason = xpcall(function()
+            local function Policy(action, principal)
+                return Jobs.Authorize(action, principal, 'jobs.native.readonly', {})
+            end
+            local definition = Policy(Config.Authorization.definitionAction, 'feather-jobs')
+            local assignment = Policy(Config.Authorization.assignmentAction, 'feather-jobs')
+            local foreignDefinition = Policy(Config.Authorization.definitionAction, 'jobs-untrusted-native-test')
+            local foreignAssignment = Policy(Config.Authorization.assignmentAction, 'jobs-untrusted-native-test')
+            local employer = Jobs.ValidateEmployer('organization', args[1])
+            local tests = {
+                { 'Jobs ready', Jobs.GetHealth().value.state == 'ready' },
+                { 'policy enabled', Config.Authorization.enabled == true },
+                { 'native definition policy', definition.ok == true },
+                { 'native assignment policy', assignment.ok == true },
+                { 'foreign definition denied', not foreignDefinition.ok and foreignDefinition.code == 'authorization_denied' },
+                { 'foreign assignment denied', not foreignAssignment.ok and foreignAssignment.code == 'authorization_denied' },
+                { 'organization employer ' .. args[2],
+                    (args[2] == 'active' and employer.ok == true)
+                    or (args[2] ~= 'active' and not employer.ok and employer.code == expected[args[2]]) },
+            }
+            local passed = 0
+            for _, test in ipairs(tests) do
+                if test[2] then passed = passed + 1 end
+                print(('[JobsNativeIntegrationSmokeTest] %s %s'):format(test[2] and 'PASS' or 'FAIL', test[1]))
+            end
+            print(('[JobsNativeIntegrationSmokeTest] employerResult=%s done %d/%d passed (read-only)')
+                :format(employer.ok and 'allowed' or tostring(employer.code), passed, #tests))
+        end, debug.traceback)
+        if not called then print('[JobsNativeIntegrationSmokeTest] FAIL ' .. tostring(reason)) end
+    end)
+end, true)
+
 RegisterCommand('JobsReleaseContractSmokeTest', function(source)
     if source ~= 0 then return end
     local called, reason = xpcall(function()

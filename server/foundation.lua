@@ -246,6 +246,13 @@ function Jobs.ValidateEmployer(employerType, employerId)
         end
         return Err('employer_provider_unavailable', 'Organization lookup failed.', { code = result.code })
     end
+    if type(result.value) ~= 'table' or type(result.value.organizationId) ~= 'string'
+        or result.value.organizationId:lower() ~= employerId:lower()
+        or (result.value.status ~= 'active' and result.value.status ~= 'pending'
+            and result.value.status ~= 'suspended' and result.value.status ~= 'dissolving'
+            and result.value.status ~= 'dissolved') then
+        return Err('employer_provider_unavailable', 'Organization lookup returned invalid identity or status.')
+    end
     if result.value.status ~= 'active' then return Err('employer_inactive', 'Employer organization is not active.') end
     return Ok(true)
 end
